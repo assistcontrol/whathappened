@@ -6,7 +6,7 @@ import (
 	"log"
 
 	"github.com/assistcontrol/whathappened/date"
-	"github.com/assistcontrol/whathappened/git"
+	"github.com/assistcontrol/whathappened/repo"
 )
 
 const (
@@ -23,10 +23,14 @@ func init() {
 }
 
 func main() {
-	list, err := git.Query(repoRoot, Date, nil)
+	r, err := repo.New("/Users/adamw/build/dotfiles", Date)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	fmt.Printf("%#v\n", list)
+	if err := r.Query(nil); err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Printf("%#v\n", r.Rev())
 }
