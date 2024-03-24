@@ -22,10 +22,8 @@ func Range(floor string) ([]string, error) {
 	ceiling := d.AddDate(0, 0, 1).Format(dateFormat)
 
 	dateRange := []string{
-		"--since",
-		floor + ":00:00",
-		"--before",
-		ceiling + ":00:00",
+		"--since", floor + ":00:00",
+		"--before", ceiling + ":00:00",
 	}
 
 	return dateRange, nil

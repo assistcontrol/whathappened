@@ -10,9 +10,18 @@ import (
 )
 
 const (
-	revisionFormat = "%ct %H"
+	revisionFormat = "%H"
 	dateFormat     = "%a %d %b %H:%M"
 )
+
+var Date, Base string
+
+type Config struct {
+	Repo    string
+	Date    string
+	Queries [][]string
+	Format  string
+}
 
 type Repo struct {
 	Path      string
@@ -41,6 +50,26 @@ func New(path, day string) (*Repo, error) {
 	}, nil
 }
 
+func Commits(c Config) (string, error) {
+	r, err := New(Base+c.Repo, c.Date)
+	if err != nil {
+		return "", err
+	}
+
+	for _, q := range c.Queries {
+		if err := r.Query(q); err != nil {
+			return "", err
+		}
+	}
+
+	logs, err := r.Logs(c.Format)
+	if err != nil {
+		return "", err
+	}
+
+	return logs, nil
+}
+
 func (r *Repo) Add(revision []byte) {
 	if len(revision) == 0 {
 		return
@@ -61,7 +90,7 @@ func (r *Repo) Query(limiters []string) error {
 	args = append(args, "-C", r.Path)
 	args = append(args, "log")
 	args = append(args, r.dateRange...)
-	args = append(args, fmt.Sprintf("--format='%s'", revisionFormat))
+	args = append(args, fmt.Sprintf("--format=%s", revisionFormat))
 	args = append(args, limiters...)
 
 	out, err := exec.Command("git", args...).Output()
@@ -74,4 +103,20 @@ func (r *Repo) Query(limiters []string) error {
 	}
 
 	return nil
+}
+
+func (r *Repo) Logs(format string) (string, error) {
+	args := []string{}
+	args = append(args, "-C", r.Path)
+	args = append(args, "show", "--no-patch")
+	args = append(args, fmt.Sprintf("--date=format-local:%s", dateFormat))
+	args = append(args, fmt.Sprintf("--format=%s", format))
+	args = append(args, r.revisions...)
+
+	out, err := exec.Command("git", args...).Output()
+	if err != nil {
+		return "", err
+	}
+
+	return string(out), nil
 }
