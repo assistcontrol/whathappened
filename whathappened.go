@@ -4,19 +4,19 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"os/exec"
 
 	"github.com/assistcontrol/whathappened/date"
 	"github.com/assistcontrol/whathappened/repo"
 )
 
 const (
-	// repoRoot = "/data/freebsd/"
-	repoRoot = "/Users/adamw/build/"
+	repoRoot = "/data/freebsd/"
 )
 
 var (
 	Date    string
-	OSVer   = "14.1"
+	OSVer   string
 	Queries = map[string][][]string{
 		"relevant": {
 			{"--committer", "adamw@FreeBSD.org"},
@@ -26,7 +26,7 @@ var (
 			{"Mk", "Tools", "Templates"},
 		},
 		"src": {
-			{"stable/" + OSVer},
+			{"stable/"}, // OSVer gets appended later...
 		},
 	}
 )
@@ -36,12 +36,19 @@ func init() {
 
 	flag.StringVar(&Date, "date", date.Yesterday(), "Date (YYYY-MM-DD), default: yesterday")
 	flag.Parse()
-}
 
-func main() {
 	repo.Date = Date
 	repo.Base = repoRoot
 
+	version, err := exec.Command("uname", "-U").Output()
+	if err != nil {
+		log.Fatal(err)
+	}
+	OSVer = string(version[0:2])
+}
+
+func main() {
+	// RELEVANT
 	relevant, err := repo.Commits(repo.Config{
 		Repo:    "ports",
 		Queries: Queries["relevant"],
@@ -51,6 +58,7 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// OTHER
 	other, err := repo.Commits(repo.Config{
 		Repo:    "ports",
 		Queries: Queries["other"],
@@ -60,15 +68,18 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// src, err := repo.Commits(repo.Config{
-	// 	Repo:    "src",
-	// 	Queries: Queries["src"],
-	// 	Format:  commitFmt("src"),
-	// })
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
+	// SRC
+	Queries["src"][0][0] += OSVer
+	src, err := repo.Commits(repo.Config{
+		Repo:    "src",
+		Queries: Queries["src"],
+		Format:  commitFmt("src"),
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
 
+	// Output
 	if len(relevant) != 0 {
 		fmt.Print(title("relevant ports"))
 		fmt.Println(relevant)
@@ -79,10 +90,10 @@ func main() {
 		fmt.Println(other)
 	}
 
-	// if len(src) != 0 {
-	// 	 fmt.Print(title("src"))
-	// 	 fmt.Println(src)
-	// }
+	if len(src) != 0 {
+		fmt.Print(title("src"))
+		fmt.Println(src)
+	}
 }
 
 // title returns a formatted title.

@@ -18,14 +18,12 @@ var Date, Base string
 
 type Config struct {
 	Repo    string
-	Date    string
 	Queries [][]string
 	Format  string
 }
 
 type Repo struct {
 	Path      string
-	Date      string
 	dateRange []string
 	commits   []string
 	hashes    hashMap
@@ -34,15 +32,14 @@ type Repo struct {
 
 type hashMap map[[16]byte]bool
 
-func New(path, day string) (*Repo, error) {
-	d, err := date.Range(day)
+func New(path string) (*Repo, error) {
+	d, err := date.Range(Date)
 	if err != nil {
 		return nil, err
 	}
 
 	return &Repo{
 		Path:      path,
-		Date:      day,
 		dateRange: d,
 		commits:   []string{},
 		hashes:    make(hashMap),
@@ -51,7 +48,7 @@ func New(path, day string) (*Repo, error) {
 }
 
 func Commits(c Config) (string, error) {
-	r, err := New(Base+c.Repo, c.Date)
+	r, err := New(Base + c.Repo)
 	if err != nil {
 		return "", err
 	}
