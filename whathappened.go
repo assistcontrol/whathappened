@@ -7,6 +7,7 @@ import (
 	"os/exec"
 
 	"github.com/assistcontrol/whathappened/date"
+	"github.com/assistcontrol/whathappened/ports"
 	"github.com/assistcontrol/whathappened/repo"
 )
 
@@ -23,7 +24,7 @@ var (
 			{"--grep", "adamw"},
 		},
 		"other": {
-			{"Mk", "Tools", "Templates"},
+			{"Mk", "Tools", "Templates"}, // Dirs to always watch
 		},
 		"src": {
 			{"stable/"}, // OSVer gets appended later...
@@ -48,7 +49,18 @@ func init() {
 }
 
 func main() {
+	local, err := ports.Local()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	mine, err := ports.Mine()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	// RELEVANT
+	Queries["relevant"] = append(Queries["relevant"], local, mine)
 	relevant, err := repo.Commits(repo.Config{
 		Repo:    "ports",
 		Queries: Queries["relevant"],
