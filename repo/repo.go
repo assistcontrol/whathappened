@@ -53,6 +53,11 @@ func Commits(c Config) (string, error) {
 		return "", err
 	}
 
+	err = r.Update()
+	if err != nil {
+		return "", err
+	}
+
 	for _, q := range c.Queries {
 		if err := r.Query(q); err != nil {
 			return "", err
@@ -116,4 +121,18 @@ func (r *Repo) Logs(format string) (string, error) {
 	}
 
 	return string(out), nil
+}
+
+// Update runs git pull on the repository.
+func (r *Repo) Update() error {
+	args := []string{}
+	args = append(args, "-C", r.Path)
+	args = append(args, "pull", "-q")
+
+	_, err := exec.Command("git", args...).Output()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
