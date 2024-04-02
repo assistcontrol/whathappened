@@ -120,7 +120,7 @@ func commitFmt(repo string) string {
 		h += "━"
 	}
 
-	h += fmt.Sprintf("%%nCommitter: %%cl (%%cn)%%nDate: %%cd%%nCommit: https://cgi.freebsd.org/%s/commit/?id=%%h%%n%%n%%B", repo)
+	h += fmt.Sprintf("%%nCommitter: %%cl (%%cn)%%nDate: %%cd%%nCommit: https://cgit.freebsd.org/%s/commit/?id=%%h%%n%%n%%B", repo)
 
 	return h
 }
