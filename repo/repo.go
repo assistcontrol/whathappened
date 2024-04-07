@@ -92,6 +92,7 @@ func (r *Repo) Query(limiters []string) error {
 	args = append(args, "-C", r.Path)
 	args = append(args, "log")
 	args = append(args, r.dateRange...)
+	args = append(args, "--reverse")
 	args = append(args, fmt.Sprintf("--format=%s", revisionFormat))
 	args = append(args, limiters...)
 
