@@ -2,34 +2,49 @@ package ports
 
 import (
 	"bufio"
+	"database/sql"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"slices"
 	"strings"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
-const indexGlob = "/usr/ports/INDEX-1[0-9]*"
+const (
+	indexGlob = "/usr/ports/INDEX-1[0-9]*"
+	repoBase  = "/data/freebsd/ports/"
+	repoDB    = "/var/db/pkg/local.sqlite"
+)
 
 // Local gets a list of ports from the current live system, whether installed or
 // not.
 func Local() ([]string, error) {
-	pkgquery, err := exec.Command("pkg", "query", "%o").Output()
+	db, err := sql.Open("sqlite3", repoDB)
 	if err != nil {
 		return nil, err
 	}
+	defer db.Close()
+
+	rows, err := db.Query("SELECT origin FROM packages")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
 
 	list := []string{}
-	for _, pkg := range strings.Split(string(pkgquery), "\n") {
-		if len(pkg) == 0 {
+	for rows.Next() {
+		var origin string
+		if err := rows.Scan(&origin); err != nil {
+			return nil, err
+		}
+
+		// Check if the port exists in the ports tree.
+		if stat, err := os.Stat(repoBase + origin); err != nil || !stat.IsDir() {
 			continue
 		}
 
-		if stat, err := os.Stat("/data/freebsd/ports/" + pkg); err != nil || !stat.IsDir() {
-			continue
-		}
-
-		list = append(list, pkg)
+		list = append(list, origin)
 	}
 
 	return list, nil
