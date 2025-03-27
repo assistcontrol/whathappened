@@ -3,6 +3,7 @@ package ports
 import (
 	"bufio"
 	"database/sql"
+	"io"
 	"os"
 	"path/filepath"
 	"slices"
@@ -17,6 +18,12 @@ const (
 	repoDB    = "/var/db/pkg/local.sqlite"
 )
 
+func closeOrPanic(o io.Closer) {
+	if err := o.Close(); err != nil {
+		panic("Unable to close object: " + err.Error())
+	}
+}
+
 // Local gets a list of ports from the current live system, whether installed or
 // not.
 func Local() ([]string, error) {
@@ -24,13 +31,13 @@ func Local() ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer db.Close()
+	defer closeOrPanic(db)
 
 	rows, err := db.Query("SELECT origin FROM packages")
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer closeOrPanic(rows)
 
 	list := []string{}
 	for rows.Next() {
@@ -64,7 +71,7 @@ func Mine() ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close()
+	defer closeOrPanic(file)
 
 	matches := []string{}
 
